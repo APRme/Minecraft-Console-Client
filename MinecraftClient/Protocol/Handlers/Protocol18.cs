@@ -591,15 +591,21 @@ namespace MinecraftClient.Protocol.Handlers
                                 packetData); // Dimension Names (World Names) - 1.16 and above
 
                         if (protocolVersion < MC_1_20_2_Version)
-                        {
-                            var registryCodec =
-                                dataTypes.ReadNextNbt(
-                                    packetData); // Registry Codec (Dimension Codec) - 1.16 and above
-                            if (protocolVersion >= MC_1_19_Version)
-                                ChatParser.ReadChatType(registryCodec);
-                            if (handler.GetTerrainEnabled())
-                                World.StoreDimensionList(registryCodec);
-                        }
+						{
+							var registryCodec = dataTypes.ReadNextNbt(packetData); // Registry Codec (Dimension Codec) - 1.16 and above
+							var temporaryRegistry = new Dictionary<string, object>();
+							foreach(var (key, value) in registryCodec)
+							{
+								if (!key.Contains("minecraft:", StringComparison.OrdinalIgnoreCase))
+									temporaryRegistry.Add($"minecraft:{key}", value);
+							}
+							if (temporaryRegistry.Count > 0)
+								registryCodec = temporaryRegistry;
+							if (protocolVersion >= MC_1_19_Version)
+								ChatParser.ReadChatType(registryCodec);
+							if (handler.GetTerrainEnabled())
+								World.StoreDimensionList(registryCodec);
+						}
                     }
 
                     if (protocolVersion < MC_1_20_2_Version)
